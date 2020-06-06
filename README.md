@@ -6,7 +6,7 @@ MATLAB Data analysis scripts for investigating the occurence of RP-like events i
 2. Associated data for the scripts can be found at [osf.io/ymq2t/](https://osf.io/ymq2t/).
 
 **INSTALLATION:**
-- Install the repository within your bbci_public folder of your BBCI toolbox.
+- Install the repository within the 'bbci_public' folder of the BBCI toolbox.
 
 **USAGE:**
 - To run the analysis, use 'MasterAnalysis.m' and specify the location of the data (available at [osf.io/ymq2t/](https://osf.io/ymq2t/)).
