@@ -74,7 +74,7 @@ Cout_rt = cell(Ns,Np);
 for ii = 1:Ns
     
     % load phase 1 data
-    [mrk1,cnt1] = loadData(subjs_all{ii},'Phase1');
+    [mrk1,cnt1] = loadData(opt.subjs_all{ii},'Phase1');
     cnt1 = proc_selectChannels(cnt1,opt.clab_load);
     trl = getTrialMarkers(mrk1,'movement onset');
     mrk1 = mrk_selectEvents(mrk1,[trl{:}]);
@@ -83,7 +83,7 @@ for ii = 1:Ns
     
     if rt == 1
         % load rt data
-        [mrk2,cnt2] = loadData(subjs_all{ii},'RT');
+        [mrk2,cnt2] = loadData(opt.subjs_all{ii},'RT');
         cnt2 = proc_selectChannels(cnt2,opt.clab_load);
         trl = getTrialMarkers(mrk2,'go signal');
         mrk2 = mrk_selectEvents(mrk2,[trl{:}]);
