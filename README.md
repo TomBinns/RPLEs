@@ -10,4 +10,4 @@ MATLAB data analysis scripts for investigating the occurence of RP-like events i
 
 **USAGE:**
 - To run the analysis, use ['RunAnalysis.m'](Analysis/RunAnalysis.m) and specify the location of the data (available at [osf.io/ymq2t/](https://osf.io/ymq2t/)).
-- Scripts for generating classifier outputs and simulating noise can be found in the 'Generate' folder.
+- Scripts for generating classifier outputs and simulating noise can be found in the ['Generate'](Generate) folder.
