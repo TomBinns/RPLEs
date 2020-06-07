@@ -9,7 +9,7 @@ function [thresholds,SecsPerEvent] = findThresholds(Cout_p1)
 % Returns:
 %  thresholds - thresholds 1 - 5 for each subject and all three modes
 %  SecsPerEvent - number of seconds per event for threshold 5, for all 
-%                 subjects and all modes (should be close to 8.95)
+%                 subjects and all modes
 % 
 % Author(s): Thomas Binns, 2020                
 
@@ -51,18 +51,22 @@ for aa = 1:3
         WT = WT + opt.untilTime - 1000;
         WT = WT/1000;
         meanWT = mean(WT);
-        % gets threshold for classifier output
+        % gets thresholds for classifier output
         edges = [-Inf opt.WindowStartPoint opt.WindowEndPoint Inf];
         opt.method = 'setval';
         [highthresh,NRPLEs] = getThreshMode(mode,P1Cout{bb},edges,...
-            mrk,cnt,meanWT);
+            mrk,cnt,meanWT); % threshold 5
         T5acc(bb,aa) = (NRPLEs/sum(WT))*8.95;
         opt.method = 'avgcout';
         lowthresh = getThreshMode(mode,P1Cout{bb},edges,mrk,cnt,meanWT);
+            % threshold 1
         thresholds{aa}(:,bb) = linspace(lowthresh,highthresh,5);
+            % thresholds 2-4
     end
 end
 
+% gets the number of seconds per event for threshold 5 (should be close to 
+% 8.95)
 SecsPerEvent = nan(size(T5acc));
 SecsPerEvent(:) = 8.95;
 SecsPerEvent = SecsPerEvent./T5acc;

@@ -12,16 +12,15 @@ opt.dataDir = 'C:\Users\tomth\Documents\Coding\RPLE_data';
 opt.subjs_all = {'VPtae','VPtaf','VPtah','VPtai',...
     'VPtal','VPtam','VPtan','VPtao','VPtap','VPtaq',...
     'VPtar','VPtas','VPtat','VPtau','VPtay',...
-    'VPtaz','VPtba'};
+    'VPtaz','VPtba'}; % subject list
 Ns = length(opt.subjs_all);
-
 opt.clab_load = {'F1','Fz','F2',...
              'FC3','FC2','FC1','FC4',...
              'C3','C1','Cz','C2','C4',...
              'CP3','CP1','CPz','CP2','CP4',...
-             'P1','Pz','P2'};
-         
-opt.untilTime = -1000;
+             'P1','Pz','P2'}; % channels to load
+opt.untilTime = -1000; % time until which RPLEs are found; only used if
+    % generating trial markers for the noise
 
 
 %% Gets alpha value of EEG data (mean of phase 1 and phase RT alpha values)
@@ -37,8 +36,9 @@ for aa = 1:Ns
     % phase 1
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'Phase1');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -47,7 +47,7 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,2000,{'trial start','movement onset'});
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     idx = ones(size(times));
     idx(1:2:end) = 0;
@@ -62,7 +62,7 @@ for aa = 1:Ns
     xvals = log10(spec.t);
     yvals = log10(spec.x);
     yvals = yvals';
-    fit = polyfit(xvals,yvals,1);
+    fit = polyfit(xvals,yvals,1); % log-log plots data and gets gradient
     alphas(aa,1) = fit(1)*-1;
     fits(aa,1,1) = fit(1);
     fits(aa,2,1) = fit(2);
@@ -71,8 +71,9 @@ for aa = 1:Ns
     % phase RT
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'RT');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','go signal',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -81,7 +82,7 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,1000,{'trial start','go signal'});
     mrk = mrk_selectClasses(mrk,{'trial start','go signal'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     for bb = 1:length(times)/2
         data = cat(1,data,cnt.x(times((bb*2)-1):times(bb*2),:));
@@ -93,7 +94,7 @@ for aa = 1:Ns
     xvals = log10(spec.t);
     yvals = log10(spec.x);
     yvals = yvals';
-    fit = polyfit(xvals,yvals,1);
+    fit = polyfit(xvals,yvals,1); % log-log plots data and gets gradient
     alphas(aa,2) = fit(1)*-1;
     fits(aa,1,2) = fit(1);
     fits(aa,2,2) = fit(2);
@@ -122,6 +123,8 @@ legend('Phase 1','Phase RT',alphaLeg);
 %% Gets all WTs and randomly chooses times to create trial markers for
 % noise data
 % 
+% % gets trial lengths of all trials and gets number of trials per subject
+% % N.B. phase 1 data only
 % Ntrials = nan(1,Ns);
 % allWTs = cell(1,Ns);
 % catWTs = [];
@@ -140,9 +143,11 @@ legend('Phase 1','Phase RT',alphaLeg);
 % end
 % catWTs = sort(catWTs);
 % 
+% % randomly chooses trial lengths
 % idx = randi(length(catWTs),1,ceil(mean(Ntrials)));
 % selWTs = catWTs(idx);
 % 
+% % creates new trial markers
 % newmrk = mrk;
 % newmrk.time = [];
 % newmrk.y = repmat(eye(3),1,length(idx));
@@ -152,7 +157,7 @@ legend('Phase 1','Phase RT',alphaLeg);
 %     if aa == 1
 %         newmrk.time(zz) = 1;
 %     else
-%         newmrk.time(zz) = newmrk.time(zz-1) + 3000;
+%         newmrk.time(zz) = newmrk.time(zz-1) + 3000; % inter-trial period
 %     end
 %     % movement onset marker
 %     newmrk.time(zz+1) = newmrk.time(zz) + selWTs(aa);
@@ -166,7 +171,7 @@ legend('Phase 1','Phase RT',alphaLeg);
 %% Simulates noise data based on alpha values of EEG data
 
 mrk = loadData(opt.subjs_all{1},'NoisePer');
-newtimes = convTimes(mrk.time,100);
+newtimes = convTimes(mrk.time,100); % finds how long data needs to be
 
 excludeFinal = 1000; % excludes RP period from phase 1 data
 
@@ -178,8 +183,9 @@ for aa = 1:Ns
     % phase 1
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'Phase1');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -188,7 +194,7 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,2000,{'trial start','movement onset'});
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     idx = ones(size(times));
     idx(1:2:end) = 0;
@@ -196,13 +202,14 @@ for aa = 1:Ns
     for bb = 1:length(times)/2
         data = cat(1,data,cnt.x(times((bb*2)-1):times(bb*2),:));
     end
-    stds(aa,1) = std(data);
+    stds(aa,1) = std(data); % gets standard deviation of data
     
     % phase RT
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'RT');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','go signal',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -211,12 +218,12 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,1000,{'trial start','go signal'});
     mrk = mrk_selectClasses(mrk,{'trial start','go signal'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     for bb = 1:length(times)/2
         data = cat(1,data,cnt.x(times((bb*2)-1):times(bb*2),:));
     end
-    stds(aa,2) = std(data);
+    stds(aa,2) = std(data); % gets standard deviation of data
     
 end
 alphaVals = round(meanalphas,2);
@@ -255,8 +262,9 @@ for aa = 1:Ns
     % phase 1
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'Phase1');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -265,7 +273,7 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,2000,{'trial start','movement onset'});
     mrk = mrk_selectClasses(mrk,{'trial start','movement onset'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     idx = ones(size(times));
     idx(1:2:end) = 0;
@@ -273,13 +281,14 @@ for aa = 1:Ns
     for bb = 1:length(times)/2
         data = cat(1,data,cnt.x(times((bb*2)-1):times(bb*2),:));
     end
-    stds(aa,1) = std(data);
+    stds(aa,1) = std(data); % gets standard deviation of data
     
     % phase RT
     data = [];
     
+    % loads data
     [mrk,cnt] = loadData(opt.subjs_all{aa},'RT');
-    cnt = proc_selectChannels(cnt,'Cz');
+    cnt = proc_selectChannels(cnt,'Cz'); % uses only data from Cz
     mrk = mrk_selectClasses(mrk,{'trial start','go signal',...
         'trial end'});
     trial_mrk = getTrialMarkers(mrk);
@@ -288,12 +297,12 @@ for aa = 1:Ns
     mrk = removeShortTrials(mrk,1000,{'trial start','go signal'});
     mrk = mrk_selectClasses(mrk,{'trial start','go signal'});
     
-    % isolates data from trials
+    % isolates within-trial data (excluding the RP period)
     times = convTimes(mrk.time,100);
     for bb = 1:length(times)/2
         data = cat(1,data,cnt.x(times((bb*2)-1):times(bb*2),:));
     end
-    stds(aa,2) = std(data);
+    stds(aa,2) = std(data); % gets standard deviation of data
     
 end
 stdVals = mean(stds,2);

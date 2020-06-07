@@ -33,14 +33,17 @@ for aa = 1:3
         zz = 1;
         for cc = 1:size(epos{aa}{bb}.y,2)
             event = epos{aa}{bb}.x(:,:,cc);
-            if epos{aa}{bb}.y(rpLoc,cc) == 1
+            if epos{aa}{bb}.y(rpLoc,cc) == 1 % Euclidean distances of
+                    % single-trial RPs to the RP template
                 dists{aa}{bb}.rp(xx) = norm(template{aa}{bb}(:)-event(:));
                 xx = xx+1;
-            elseif epos{aa}{bb}.y(rple_p1Loc,cc) == 1
+            elseif epos{aa}{bb}.y(rple_p1Loc,cc) == 1 % Euclidean distances 
+                    % of single-trial phase 1 RPLEs to the RP template
                 dists{aa}{bb}.rple_p1(yy) = norm(template{aa}{bb}(:)-...
                     event(:));
                 yy = yy+1;
-            elseif epos{aa}{bb}.y(rple_rtLoc,cc) == 1
+            elseif epos{aa}{bb}.y(rple_rtLoc,cc) == 1 % Euclidean distances 
+                    % of single-trial phase RT RPLEs to the RP template
                 dists{aa}{bb}.rple_rt(zz) = norm(template{aa}{bb}(:)-...
                     event(:));
                 zz = zz+1;

@@ -22,7 +22,7 @@ function [threshold,numRPLEs] = getCzThresh(Cout,edges,mrk,cnt,meanWT)
 global opt
 
 numRPLEs = [];
-if strcmp(opt.method,'setval')
+if strcmp(opt.method,'setval') % threshold 5
     % gets threshold based on whichever threshold gives the closest number
     % of crossings to the target
     
@@ -77,19 +77,23 @@ if strcmp(opt.method,'setval')
     perSecTarget = 8.95;
     perTrialTarget = meanWT/perSecTarget;
     target = length(Cout)*perTrialTarget;
-    ithresh = find(NRPLEs==target);
-    if ~isempty(ithresh)
+    ithresh = find(NRPLEs==target); % check if any of the possible
+        % thresholds produce the target number of events...
+    if ~isempty(ithresh) % if 2 thresholds produce the target number, take
+            % whichever threshold is closest to the F-measure (see Powers,
+            % 2011); N.B. just a precaution, doesn't actually happen
         if length(ithresh) > 1
             [~,ind] = min(abs(ind_maxF-ithresh'));
             ithresh = ithresh(ind);
         end        
-    else
+    else % if no thresholds produce the target number, take whichever
+             % threshold is closest
         [~,ithresh] = min(abs(target-NRPLEs'));   
     end
     threshold = thresh(ithresh);
     numRPLEs = NRPLEs(ithresh);
     
-elseif strcmp(opt.method,'avgcout')
+elseif strcmp(opt.method,'avgcout') % threshold 1
     % Gets threshold based on average classifier output at time of movement
     % onset
     Coutvals = nan(1,length(Cout));
@@ -98,7 +102,8 @@ elseif strcmp(opt.method,'avgcout')
         Coutvals(aa) = Cout{aa}.x(iCout);
     end
     threshold = mean(Coutvals);
-else
+else % UNUSED!; generates thresholds based on the F-measure (see Powers,
+         % 2011)
      x_all = cellfun(@(f)f.x,Cout,'UniformOutput',false);
     for aa = 1:length(x_all)
         x_all{aa} = transpose(x_all{aa});

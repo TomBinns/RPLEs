@@ -84,7 +84,7 @@ for aa = 1:length(opt.subjs_all)
     [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(P1Cout1{aa},...
         threshold,mrk,opt.untilTime,opt.Cival);
     % Isolates RPs & RPLEs and gets number of RPLEs per second
-    if NoRPLEs == 0
+    if NoRPLEs == 0 % if RPLEs present
         rplemrk = mrk_selectClasses(rplemrk,{'rple','movement onset'});
         rplemrk2 = mrk_selectClasses(rplemrk,{'rple'});
         epo = proc_segmentation(cnt,rplemrk2,opt.epochSegment);
@@ -98,16 +98,17 @@ for aa = 1:length(opt.subjs_all)
             rpleTs{1}{1,aa}{bb} = CoutChangeTs...
                 (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
         end
-    else
+    else % if no RPLEs, just epoch RPs
         rplemrk = mrk_selectClasses(rplemrk,{'movement onset'});
         Eps{1}(1,aa) = 0;
     end
-    % Epochs data
+    % Epochs data and performs artefact rejection
     epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
     epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
     epo.className = {'rple p1','movement onset'};
     [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
     rpleepos{1}{1,aa} = epo;
+    % removes RPLEs rejected as artefacts from rpleTs
     if ~isempty(iArte)
         zz = 1;
         for bb = 1:size(rpleTs{1}{1,aa},1)
@@ -150,7 +151,7 @@ for aa = 1:length(opt.subjs_all)
     [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(RTCout1{aa},...
         threshold,mrk,0,opt.Cival);
     % Isolates RPs & RPLEs and gets number of RPLEs per second
-    if NoRPLEs == 0
+    if NoRPLEs == 0 % if RPLEs present
         rplemrk = mrk_selectClasses(rplemrk,{'rple'});
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
@@ -162,11 +163,12 @@ for aa = 1:length(opt.subjs_all)
             rpleTs{1}{2,aa}{bb} = CoutChangeTs...
                 (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
         end
-        % Epochs data
+        % Epochs data and performs artefact rejection
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo.className = {'rple rt'};
-        [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200,'verbose','True');
+        [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
+        % removes RPLEs rejected as artefacts from rpleTs
         if ~isempty(iArte)
             zz = 1;
             for bb = 1:size(rpleTs{1}{2,aa},1)
@@ -188,6 +190,8 @@ for aa = 1:length(opt.subjs_all)
                 end
             end
         end
+        % combines phase RT RPLEs into the same variable as the phase 1 RPs
+        % and RPLEs
         rpleepos{1}{1,aa}.x = cat(3,rpleepos{1}{1,aa}.x,epo.x);
         rpleepos{1}{1,aa}.y(3,:) = 0;
         rty = zeros(3,size(epo.x,3));
@@ -198,7 +202,8 @@ for aa = 1:length(opt.subjs_all)
         if avg == 1
             rpleepos{1}{1,aa} = proc_average(rpleepos{1}{1,aa},'Stats',1);
         end
-    else
+    else % if no RPLEs, set number of events to 0 and use previous epochs
+             % as a placeholder
         Eps{1}(2,aa) = 0;
         if avg == 1
             rpleepos{1}{1,aa} = proc_average(rpleepos{1}{1,aa});

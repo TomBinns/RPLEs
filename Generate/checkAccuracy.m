@@ -9,19 +9,18 @@ opt.dataDir = 'C:\Users\tomth\Documents\Coding\RPLE_data';
 opt.subjs_all = {'VPtae','VPtaf','VPtah','VPtai',...
     'VPtal','VPtam','VPtan','VPtao','VPtap','VPtaq',...
     'VPtar','VPtas','VPtat','VPtau','VPtay',...
-    'VPtaz','VPtba'};
+    'VPtaz','VPtba'}; % subject list
 Ns = length(opt.subjs_all);
-
 opt.clab_load = {'F1','Fz','F2',...
              'FC3','FC2','FC1','FC4',...
              'C3','C1','Cz','C2','C4',...
              'CP3','CP1','CPz','CP2','CP4',...
-             'P1','Pz','P2'};
+             'P1','Pz','P2'}; % channels to load
          
-ival_fv = [-1000 0];
-bsln_len = 100;
-bsln_pos = 'beginning';
-ivals_jm = [-1000  -900;
+ival_fv = [-1000 0]; % periods to train classifier on
+bsln_len = 100; % length of baseline (ms)
+bsln_pos = 'beginning'; % what period to use for baseline
+ivals_jm = [-1000  -900; % intervals for jumping means
             -900   -800;
             -800   -700;
             -700   -600;
@@ -31,7 +30,7 @@ ivals_jm = [-1000  -900;
             -300   -200;
             -200   -100;
             -100      0];
-ival_amp = [-400 0];
+ival_amp = [-400 0]; % period for taking mean-across-time for spatial mode
 
 %%
 
@@ -83,7 +82,8 @@ for ii = 1:Ns
     % load phase 1 data
     [mrk1,cnt1] = loadData(opt.subjs_all{ii},'Phase1');
     cnt1 = proc_selectChannels(cnt1,opt.clab_load);
-    trl = getTrialMarkers(mrk1,'movement onset');
+    trl = getTrialMarkers(mrk1,'movement onset'); % only analyses data
+        % from trials with a movement
     mrk1 = mrk_selectEvents(mrk1,[trl{:}]);
     mrk1 = mrk_selectClasses(mrk1,{'trial start','movement onset',...
         'trial end'});
@@ -91,12 +91,14 @@ for ii = 1:Ns
     for jj = 1:Np
         
         mrk_ = mrk_selectClasses(mrk1,{'trial start','movement onset'});
-        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival);
+        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival); % isolates data
+            % preceding trial start (idle period) and movement onset
+            % (RP period)
         
         % get cross-validated accuracies
         [~,~,Cout] = crossvalidation(fv,@train_RLDAshrink,...
             'SampleFcn',{@sample_leaveOneOut},'Proc',proc{jj});
-        loss = loss_rocArea(fv.y,Cout);
+        loss = loss_rocArea(fv.y,Cout); % loss based on ROC curve
         lossROC(ii,jj) = (1-loss)*100;
         
     end

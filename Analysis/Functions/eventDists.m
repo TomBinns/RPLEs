@@ -71,6 +71,7 @@ for aa = 1:5
     end
 end
 
+% gets standard error of medians
 SEM = nan(size(allmeds));
 for aa = 1:5
     for bb = 1:3
@@ -127,7 +128,8 @@ for aa = 1:3
     h{1,aa}(1).Parent.YColor = [0,0,0];
 end
 
-% checks for significant differences between the Euclidean distances
+% checks for significant differences between the Euclidean distances of
+% RPLEs and RPs
 sigdiff = nan(5,6,2);
 for aa = 1:5
     for bb = 1:3

@@ -15,6 +15,7 @@ function [mrk,idx] = removeShortTrials(mrk,minTime,classes)
 % 
 % Author(s): Thomas Binns, 2020
 
+
 WT = getWTs(mrk,classes);
 
 AcceptTrials = zeros(1,length(WT));

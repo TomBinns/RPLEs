@@ -43,23 +43,25 @@ for aa = 1:length(opt.subjs_all)
     [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(Cout_noise{aa},...
         thresholds(aa),mrk,0,opt.Cival);
     % Isolates RPs & RPLEs and gets number of RPLEs per second
-    if NoRPLEs == 0
+    if NoRPLEs == 0 % if RPLEs present
         rplemrk = mrk_selectClasses(rplemrk,{'rple'});
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
-        Eps{1}(aa) = (sum(lastadd)-length(iArte))/WT;
+        Eps{1}(aa) = (sum(lastadd)-length(iArte))/WT; % number of events
+            % per second
         % Repackages CoutChangeTs into cells and removes excessive NaNs
         rpleTs{1}{aa} = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
         for bb = 1:size(CoutChangeTs,1)
             rpleTs{1}{aa}{bb} = CoutChangeTs...
                 (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
         end
-        % Epochs data
+        % Epochs data and performs artefact rejection
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo.className = {'rple noise'};
         [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
+        % removes artefact-rejected RPLEs from rpleTs
         if ~isempty(iArte)
             zz = 1;
             for bb = 1:size(rpleTs{1}{aa},1)
@@ -87,7 +89,7 @@ for aa = 1:length(opt.subjs_all)
         % if no RPLEs in the data, sets the number of events to 0 and
         % generates a placeholder epoch data struct
         Eps{1}(aa) = 0;
-        %         rpleepos{1}{1,aa} = proc_average(epo,'Stats',1);
+%         rpleepos{1}{1,aa} = proc_average(epo,'Stats',1);
         
         [mrk,cnt] = loadData(subj_code,'Phase1');
         mrk = mrk_selectClasses(mrk,{'trial start','movement onset',...

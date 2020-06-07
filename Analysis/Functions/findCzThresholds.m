@@ -10,7 +10,7 @@ function [thresholds,SecsPerEvent] = findCzThresholds(Cout_p1)
 % Returns:
 %  thresholds - thresholds 1 - 5 for each subject and all three modes
 %  SecsPerEvent - number of seconds per event for threshold 5, for all 
-%                 subjects and all modes (should be close to 8.95)
+%                 subjects and all modes
 % 
 % Author(s): Thomas Binns, 2020   
 
@@ -45,13 +45,16 @@ for bb = 1:length(opt.subjs_all)
     edges = [-Inf opt.WindowStartPoint opt.WindowEndPoint Inf];
     opt.method = 'setval';
     [highthresh,NRPLEs] = getCzThresh(Cout_p1{bb},edges,...
-        mrk,cnt,meanWT);
+        mrk,cnt,meanWT); % threshold 5
     T5acc(bb,1) = (NRPLEs/sum(WT))*8.95;
     opt.method = 'avgcout';
-    lowthresh = getCzThresh(Cout_p1{bb},edges,mrk,cnt,meanWT);
-    thresholds(:,bb) = linspace(lowthresh,highthresh,5);
+    lowthresh = getCzThresh(Cout_p1{bb},edges,mrk,cnt,meanWT); 
+        % threshold 1
+    thresholds(:,bb) = linspace(lowthresh,highthresh,5); % thresholds 2-4
 end
 
+% gets the number of seconds per event for threshold 5 (should be close to 
+% 8.95)
 SecsPerEvent = nan(size(T5acc));
 SecsPerEvent(:) = 8.95;
 SecsPerEvent = SecsPerEvent./T5acc;

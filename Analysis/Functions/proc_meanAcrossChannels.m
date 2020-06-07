@@ -14,3 +14,6 @@ function epo= proc_meanAcrossChannels(epo)
 epo.x = mean(epo.x(:,:,:),2);
 epo.clab = {'1'};
 
+
+end
+

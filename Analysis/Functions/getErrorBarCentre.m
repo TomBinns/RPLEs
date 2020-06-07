@@ -10,10 +10,9 @@ function centres = getErrorBarCentre(nGroups,nBars,group)
 % centres - locations for the centres of each error bar in this particular
 %           group ([1 x nBars] row vector)
 
+
 % find width for each bar group
-
 groupWidth = min(0.8,nBars/(nBars+1.5));
-
 centres = (1:nGroups) - groupWidth/2 + (2*group-1) * groupWidth / (2*nBars);
 
 end

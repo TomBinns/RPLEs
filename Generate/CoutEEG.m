@@ -8,19 +8,18 @@ opt.dataDir = 'C:\Users\tomth\Documents\Coding\RPLE_data';
 opt.subjs_all = {'VPtae','VPtaf','VPtah','VPtai',...
     'VPtal','VPtam','VPtan','VPtao','VPtap','VPtaq',...
     'VPtar','VPtas','VPtat','VPtau','VPtay',...
-    'VPtaz','VPtba'};
+    'VPtaz','VPtba'}; % subject list
 Ns = length(opt.subjs_all);
-
 opt.clab_load = {'F1','Fz','F2',...
              'FC3','FC2','FC1','FC4',...
              'C3','C1','Cz','C2','C4',...
              'CP3','CP1','CPz','CP2','CP4',...
-             'P1','Pz','P2'};
+             'P1','Pz','P2'}; % channels to load
          
-ival_fv = [-1000 0];
-bsln_len = 100;
-bsln_pos = 'beginning';
-ivals_jm = [-1000  -900;
+ival_fv = [-1000 0]; % periods to train classifier on
+bsln_len = 100; % length of baseline (ms)
+bsln_pos = 'beginning'; % what period to use for baseline
+ivals_jm = [-1000  -900; % intervals for jumping means
             -900   -800;
             -800   -700;
             -700   -600;
@@ -30,7 +29,7 @@ ivals_jm = [-1000  -900;
             -300   -200;
             -200   -100;
             -100      0];
-ival_amp = [-400 0];
+ival_amp = [-400 0]; % period for taking mean-across-time for spatial mode
 
 %% Gets classifier outputs for the EEG data for the spatio-temporal, 
 % temporal, and spatial modes of analysis
@@ -76,16 +75,18 @@ for ii = 1:Ns
     % load phase 1 data
     [mrk1,cnt1] = loadData(opt.subjs_all{ii},'Phase1');
     cnt1 = proc_selectChannels(cnt1,opt.clab_load);
-    trl = getTrialMarkers(mrk1,'movement onset');
+    trl = getTrialMarkers(mrk1,'movement onset'); % only use data from
+        % trials containing a movement
     mrk1 = mrk_selectEvents(mrk1,[trl{:}]);
     mrk1 = mrk_selectClasses(mrk1,{'trial start','movement onset',...
         'trial end'});
     
     if rt == 1
-        % load rt data
+        % load phase RT data
         [mrk2,cnt2] = loadData(opt.subjs_all{ii},'RT');
         cnt2 = proc_selectChannels(cnt2,opt.clab_load);
-        trl = getTrialMarkers(mrk2,'go signal');
+        trl = getTrialMarkers(mrk2,'go signal'); % only use data from
+            % trials containing a cue to move
         mrk2 = mrk_selectEvents(mrk2,[trl{:}]);
         mrk2 = mrk_selectClasses(mrk2,{'trial start','go signal',...
             'trial end'});
@@ -94,16 +95,18 @@ for ii = 1:Ns
     for jj = 1:Np
         
         mrk_ = mrk_selectClasses(mrk1,{'trial start','movement onset'});
-        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival);
+        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival); % isolate data
+            % preceding trial start (idle period) and movement onset
+            % (RP period)
         
         if rt == 1
-            % train classifier for sliding rt cout
+            % train classifier before getting phase RT classifier output
             fv = proc_chain(fv,proc{jj}.train);
             C = train_RLDAshrink(fv.x,fv.y);
-            % sliding cout
+            % get sliding classifier output
             Cout_rt{ii,jj} = proc_slidingClassi(cnt2,mrk2,proc{jj},C);
         else
-            % sliding cout
+            % get sliding classifier output
             Cout_p1{ii,jj} = proc_slidingClassi(cnt1,mrk1,proc{jj});
         end
         
@@ -135,17 +138,19 @@ for ii = 1:Ns
     
     % load phase 1 data
     [mrk1,cnt1] = loadData(opt.subjs_all{ii},'Phase1');
-    cnt1 = proc_selectChannels(cnt1,{'Cz'});
-    trl = getTrialMarkers(mrk1,'movement onset');
+    cnt1 = proc_selectChannels(cnt1,{'Cz'}); % take only data from Cz
+    trl = getTrialMarkers(mrk1,'movement onset'); % only use data from
+        % trials containing a movement
     mrk1 = mrk_selectEvents(mrk1,[trl{:}]);
     mrk1 = mrk_selectClasses(mrk1,{'trial start','movement onset',...
         'trial end'});
     
     if rt == 1
-        % load rt data
+        % load phase RT data
         [mrk2,cnt2] = loadData(opt.subjs_all{ii},'RT');
-        cnt2 = proc_selectChannels(cnt2,{'Cz'});
-        trl = getTrialMarkers(mrk2,'go signal');
+        cnt2 = proc_selectChannels(cnt2,{'Cz'}); % take only data from Cz
+        trl = getTrialMarkers(mrk2,'go signal'); % only use data from
+            % trials containing a cue to move
         mrk2 = mrk_selectEvents(mrk2,[trl{:}]);
         mrk2 = mrk_selectClasses(mrk2,{'trial start','go signal',...
             'trial end'});
@@ -154,16 +159,18 @@ for ii = 1:Ns
     for jj = 1:Np
         
         mrk_ = mrk_selectClasses(mrk1,{'trial start','movement onset'});
-        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival);
+        fv = proc_segmentation(cnt1,mrk_,proc{jj}.ival); % isolate data
+            % preceding trial start (idle period) and movement onset
+            % (RP period)
         
         if rt == 1
-            % train classifier for rt cout
+            % train classifier for getting RT classifier output
             fv = proc_chain(fv,proc{jj}.train);
             C = train_RLDAshrink(fv.x,fv.y);
-            % sliding cout
+            % gets sliding classifier output
             Cout_rt{ii,jj} = proc_slidingClassi(cnt2,mrk2,proc{jj},C);
         else
-            % sliding cout
+            % gets sliding classifier output
             Cout_p1{ii,jj} = proc_slidingClassi(cnt1,mrk1,proc{jj});
         end
         

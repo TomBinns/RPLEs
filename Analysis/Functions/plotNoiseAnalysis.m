@@ -154,7 +154,7 @@ for aa = 1:5
                 nan(sum(sets{aa}.combepos{1}{bb}.y(cc+2,:)),1);
         end
         
-        % applies RP template
+        % applies RP template to single-trial RPs and RPLEs (EEG and noise)
         xx = 1;
         yy = 1;
         zz = ones(1,6);
@@ -266,7 +266,8 @@ legend(legEntries,'Location','northwest');
 h{1}(1).Parent.FontSize = 20;
 h{1}(1).Parent.FontWeight = 'bold';
 
-% checks for sig diffs
+% checks for significant differences between the similarity scores of RPs
+% and RPLEs
 sigdiff = cell(1,2);
 sigdiff{1} = nan(5,6);
 sigdiff{2} = nan(5,6);
@@ -284,7 +285,7 @@ tables.desc{2} = 'kstest2: median Euclidean distances (to the RP template) of th
 tables.desc{3} = 'ranksum: median Euclidean distances (to the RP template) of the EEG RPLEs and the noise RPLEs';
 
 
-%% T plots
+%% Temporal plots
 
 ColourOrd = [0,0,0;.4,.4,.4;.47,.67,.19;.64,.08,.18];
 h = cell(1,5);

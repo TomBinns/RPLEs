@@ -52,7 +52,7 @@ end
 sgtitle('Number of RPLEs per second for different thresholds, phases and modes');
 
 
-%% ST plots
+%% Spatio-temporal plots
 [~,~,mnt] = loadData(opt.subjs_all{1},'Phase1');
 
 h = cell(1,5);
@@ -84,7 +84,7 @@ for aa = 1:5
 end
 
 
-%% T plots
+%% Temporal plots
 h = cell(1,5);
 Ys = nan(5,2);
 figure
@@ -121,7 +121,7 @@ for aa = 1:5
 end
 
 
-%% S plots
+%% Spatial plots
 
 h = cell(1,5);
 for aa = 1:5
