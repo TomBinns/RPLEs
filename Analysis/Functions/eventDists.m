@@ -31,7 +31,7 @@ for aa = 1:length(sets)
         selthresh{bb} = thresholds{bb}(aa,:);
     end
     rpleepos = modeAnalysis(Cout_p1,Cout_rt,'thresh',selthresh,...
-        'noAvg',0);
+        'avg',0);
     % gets RP template for each subject
     template = cell(1,3);
     avgepos = cell(1,3);

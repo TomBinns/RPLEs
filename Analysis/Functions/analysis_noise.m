@@ -67,11 +67,10 @@ for aa = 1:5
     for bb = 1:1
         selthresh{1} = thresholds(aa,:);
     end
-    [rpleepos,Eps,~] = modeAnalysisCz(Cout_p1,Cout_rt,...
+    [rpleepos,Eps] = modeAnalysisCz(Cout_p1,Cout_rt,...
         'thresh',selthresh);
     sets{aa}.rpleepos = rpleepos;
     sets{aa}.Eps = Eps;
-    sets{aa}.rpleTs = rpleTs;
 end
 
 % runs analysis on noise data

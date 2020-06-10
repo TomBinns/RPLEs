@@ -73,12 +73,10 @@ for aa = 1:5
     for bb = 1:3
         selthresh{bb} = thresholds{bb}(aa,:);
     end
-    [rpleepos,Eps,~,rsqs] = modeAnalysis(Cout_p1,...
+    [rpleepos,Eps] = modeAnalysis(Cout_p1,...
         Cout_rt,'thresh',selthresh);
     sets{aa}.rpleepos = rpleepos;
     sets{aa}.Eps = Eps;
-    sets{aa}.rpleTs = rpleTs;
-    sets{aa}.rsqs = rsqs;
 end
 
 % checks if there are significantly more events in phase 1 than phase RT
@@ -99,6 +97,6 @@ plotEEGAnalysis(sets);
 
 % plots results for similarity scores of events and checks if scores of
 % RPLEs are significantly different to scores of RPs
-[~,distsTables] = eventDists(Cout_p1,Cout_rt,sets,thresholds,0);  
+[~,distsTables] = eventDists(Cout_p1,Cout_rt,sets,thresholds);  
 
 end

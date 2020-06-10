@@ -20,7 +20,7 @@ function [rpleepos,Eps,rpleTs] = modeAnalysisNoise...
 
 
 global opt
-warning on
+warning off
 
 rpleepos = repmat({struct('rpleepos',{})},1,1);
 rpleTs = repmat({struct('rpleTs',{})},1,1);
@@ -42,6 +42,7 @@ for aa = 1:length(opt.subjs_all)
     % Gets info about RPLEs and the times of threshold crossings
     [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(Cout_noise{aa},...
         thresholds(aa),mrk,0,opt.Cival);
+    rpleTs{1}{aa} = CoutChangeTs;
     % Isolates RPs & RPLEs and gets number of RPLEs per second
     if NoRPLEs == 0 % if RPLEs present
         rplemrk = mrk_selectClasses(rplemrk,{'rple'});
@@ -50,37 +51,22 @@ for aa = 1:length(opt.subjs_all)
         [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
         Eps{1}(aa) = (sum(lastadd)-length(iArte))/WT; % number of events
             % per second
-        % Repackages CoutChangeTs into cells and removes excessive NaNs
-        rpleTs{1}{aa} = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
-        for bb = 1:size(CoutChangeTs,1)
-            rpleTs{1}{aa}{bb} = CoutChangeTs...
-                (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-        end
         % Epochs data and performs artefact rejection
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo.className = {'rple noise'};
         [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
-        % removes artefact-rejected RPLEs from rpleTs
-        if ~isempty(iArte)
-            zz = 1;
-            for bb = 1:size(rpleTs{1}{aa},1)
-                if isempty(rpleTs{1}{aa}{bb})
-                    zz = zz+1;
-                else
-                    for cc = 1:length(rpleTs{1}{aa}{bb})
-                        if ismember(zz,iArte)
-                            rpleTs{1}{aa}{bb}(zz) = nan;
-                            zz = zz+1;
-                        end
+        % removes RPLE markers (from rpleTs) for events that are rejected
+        zz = 1;
+        for bb = 1:length(rpleTs{1}{aa})
+            if ~isempty(rpleTs{1}{aa}{bb})
+                for cc = 1:length(rpleTs{1}{aa}{bb})
+                    if ismember(zz,iArte)
+                        rpleTs{1}{aa}{bb}(cc) = nan;
                     end
+                    zz = zz+1;
                 end
-                
-            end
-            for bb = 1:size(rpleTs{1}{aa},1)
-                if ~isempty(rpleTs{1}{aa}{bb})
-                    rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
-                end
+                rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
             end
         end
 %         rpleepos{1}{1,aa} = proc_average(epo,'Stats',1);

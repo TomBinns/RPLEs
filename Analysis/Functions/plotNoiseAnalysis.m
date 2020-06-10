@@ -116,7 +116,7 @@ for aa = 1:5
     allDists{aa}.rple_eeg = [];
     allDists{aa}.rple_noise = cell(1,7);
     selthresh{1} = thresholds(aa,:);
-    rpleepos = modeAnalysisCz(Cout_p1,Cout_rt,'thresh',selthresh,'noAvg',1);
+    rpleepos = modeAnalysisCz(Cout_p1,Cout_rt,'thresh',selthresh,'avg',0);
     for bb = 1:length(rpleepos{1})
         rpleepos{1}{bb}.y(p1Pos,...
             logical(rpleepos{1}{bb}.y(rtPos,:))) = 1;

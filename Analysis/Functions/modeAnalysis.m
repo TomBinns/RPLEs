@@ -5,12 +5,12 @@ function [rpleepos,Eps,rpleTs,rsqs,thresholds] = modeAnalysis(P1Cout,...
 % 
 % Argument(s):
 %  P1Cout -   classifier output for phase 1
-%  P1Cout -   classifier output for phase RT
+%  RTCout -   classifier output for phase RT
 %  OPTIONAL ARGUMENT(S):
 %   'thresh' - name-value pair; if present, the following input is taken as
 %              the thresholds
-%   'noAvg' - name-value pair; if present, the epoched data is not averaged
-%             for each participant
+%   'avg' -    name-value pair; specifies whether the epoched data should
+%              be averaged (1, default) or not (0)
 %   'selMode' - name-value pair; if present, the following input specifies
 %               which modes the analysis should be conducted on; takes the 
 %               form [spatio-temporal,temporal,spatial], with 1 signalling 
@@ -41,8 +41,8 @@ if ~isempty(varargin)
         switch varargin{(aa*2)-1}
             case 'thresh'
                 allthresh = varargin{aa*2};
-            case 'noAvg'
-                avg = 0;
+            case 'avg'
+                avg = varargin{aa*2};
             case 'selMode'
                 modes = varargin{aa*2};
             otherwise
@@ -102,6 +102,7 @@ if modes(1) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(P1Cout1{aa},...
             threshold,mrk,opt.untilTime,opt.Cival);
+        rpleTs{1}{1,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple','movement onset'});
@@ -111,13 +112,6 @@ if modes(1) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{1}(1,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{1}{1,aa} = repmat({struct('rpleTs',{})},size...
-                (CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{1}{1,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
         else
             % if no RPLEs in phase 1, just selects RPs for epoching
             rplemrk = mrk_selectClasses(rplemrk,{'movement onset'});
@@ -127,28 +121,24 @@ if modes(1) == 1
         epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo.className = {'rple p1','movement onset'};
+        markers = epo.y;
         [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
         rpleepos{1}{1,aa} = epo;
         % removes RPLE markers (from rpleTs) for events that are rejected
-        if ~isempty(iArte)
-            zz = 1;
-            for bb = 1:size(rpleTs{1}{1,aa},1)
-                if isempty(rpleTs{1}{1,aa}{bb})
-                    zz = zz+1;
-                else
-                    for cc = 1:length(rpleTs{1}{1,aa}{bb})
-                        if ismember(zz,iArte)
-                            rpleTs{1}{1,aa}{bb}(zz) = nan;
-                            zz = zz+1;
-                        end
+        iArte(markers(2,iArte)==1) = [];
+        for bb = 1:length(iArte)
+            iArte(bb) = iArte(bb) - sum(markers(2,1:iArte(bb)));
+        end
+        zz = 1;
+        for bb = 1:length(rpleTs{1}{aa})
+            if ~isempty(rpleTs{1}{aa}{bb})
+                for cc = 1:length(rpleTs{1}{aa}{bb})
+                    if ismember(zz,iArte)
+                        rpleTs{1}{aa}{bb}(cc) = nan;
                     end
+                    zz = zz+1;
                 end
-                
-            end
-            for bb = 1:size(rpleTs{1}{1,aa},1)
-                if ~isempty(rpleTs{1}{1,aa}{bb})
-                    rpleTs{1}{1,aa}{bb}(isnan(rpleTs{1}{1,aa}{bb})) = [];
-                end
+                rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
             end
         end
         
@@ -171,6 +161,7 @@ if modes(1) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(RTCout1{aa},...
             threshold,mrk,0,opt.Cival);
+        rpleTs{1}{2,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple'});
@@ -179,37 +170,22 @@ if modes(1) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{1}(2,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{1}{2,aa} = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{1}{2,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
             % Epochs data and performs artefact rejection
             epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
             epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
             epo.className = {'rple rt'};
             [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             % removes RPLE markers (from rpleTs) for events that are rejected
-            if ~isempty(iArte)
-                zz = 1;
-                for bb = 1:size(rpleTs{1}{2,aa},1)
-                    if isempty(rpleTs{1}{2,aa}{bb})
-                        zz = zz+1;
-                    else
-                        for cc = 1:length(rpleTs{1}{2,aa}{bb})
-                            if ismember(zz,iArte)
-                                rpleTs{1}{2,aa}{bb}(zz) = nan;
-                                zz = zz+1;
-                            end
+            zz = 1;
+            for bb = 1:length(rpleTs{1}{aa})
+                if ~isempty(rpleTs{1}{aa}{bb})
+                    for cc = 1:length(rpleTs{1}{aa}{bb})
+                        if ismember(zz,iArte)
+                            rpleTs{1}{aa}{bb}(cc) = nan;
                         end
+                        zz = zz+1;
                     end
-                    
-                end
-                for bb = 1:size(rpleTs{1}{2,aa},1)
-                    if ~isempty(rpleTs{1}{2,aa}{bb})
-                        rpleTs{1}{2,aa}{bb}(isnan(rpleTs{1}{2,aa}{bb})) = [];
-                    end
+                    rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
                 end
             end
             % adds phase RT RPLEs to same variable as phase 1 RPs and RPLEs
@@ -273,6 +249,7 @@ if modes(2) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(P1Cout2{aa},...
             threshold,mrk,opt.untilTime,opt.Cival);
+        rpleTs{2}{1,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple','movement onset'});
@@ -283,13 +260,6 @@ if modes(2) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{2}(1,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{2}{1,aa} = repmat({struct('rpleTs',{})},size...
-                (CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{2}{1,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
         else % if no RPLEs present, just epoch RPs
             rplemrk = mrk_selectClasses(rplemrk,{'movement onset'});
             Eps{2}(1,aa) = 0;
@@ -299,28 +269,24 @@ if modes(2) == 1
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo = proc_meanAcrossChannels(epo);
         epo.className = {'rple p1','movement onset'};
+        markers = epo.y;
         [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
         rpleepos{2}{1,aa} = epo;
-        % removes RPLE markers rejected as artefacts from rpleTs
-        if ~isempty(iArte)
-            zz = 1;
-            for bb = 1:size(rpleTs{2}{1,aa},1)
-                if isempty(rpleTs{2}{1,aa}{bb})
-                    zz = zz+1;
-                else
-                    for cc = 1:length(rpleTs{2}{1,aa}{bb})
-                        if ismember(zz,iArte)
-                            rpleTs{2}{1,aa}{bb}(zz) = nan;
-                            zz = zz+1;
-                        end
+        % removes RPLE markers (from rpleTs) for events that are rejected
+        iArte(markers(2,iArte)==1) = [];
+        for bb = 1:length(iArte)
+            iArte(bb) = iArte(bb) - sum(markers(2,1:iArte(bb)));
+        end
+        zz = 1;
+        for bb = 1:length(rpleTs{1}{aa})
+            if ~isempty(rpleTs{1}{aa}{bb})
+                for cc = 1:length(rpleTs{1}{aa}{bb})
+                    if ismember(zz,iArte)
+                        rpleTs{1}{aa}{bb}(cc) = nan;
                     end
+                    zz = zz+1;
                 end
-                
-            end
-            for bb = 1:size(rpleTs{2}{1,aa},1)
-                if ~isempty(rpleTs{2}{1,aa}{bb})
-                    rpleTs{2}{1,aa}{bb}(isnan(rpleTs{2}{1,aa}{bb})) = [];
-                end
+                rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
             end
         end
         
@@ -343,6 +309,7 @@ if modes(2) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(RTCout2{aa},...
             threshold,mrk,0,opt.Cival);
+        rpleTs{2}{2,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple'});
@@ -352,38 +319,23 @@ if modes(2) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{2}(2,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{2}{2,aa} = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{2}{2,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
             % Epochs data and performs artefact rejection
             epo = proc_segmentation(cnt,rplemrk,opt.epochSegment);
             epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
             epo.className = {'rple rt'};
             epo = proc_meanAcrossChannels(epo);
             [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
-            % removed RPLEs rejected as artefacts from rpleTs
-            if ~isempty(iArte)
-                zz = 1;
-                for bb = 1:size(rpleTs{2}{2,aa},1)
-                    if isempty(rpleTs{2}{2,aa}{bb})
-                        zz = zz+1;
-                    else
-                        for cc = 1:length(rpleTs{2}{2,aa}{bb})
-                            if ismember(zz,iArte)
-                                rpleTs{2}{2,aa}{bb}(zz) = nan;
-                                zz = zz+1;
-                            end
+            % removes RPLE markers (from rpleTs) for events that are rejected
+            zz = 1;
+            for bb = 1:length(rpleTs{1}{aa})
+                if ~isempty(rpleTs{1}{aa}{bb})
+                    for cc = 1:length(rpleTs{1}{aa}{bb})
+                        if ismember(zz,iArte)
+                            rpleTs{1}{aa}{bb}(cc) = nan;
                         end
+                        zz = zz+1;
                     end
-                    
-                end
-                for bb = 1:size(rpleTs{2}{2,aa},1)
-                    if ~isempty(rpleTs{2}{2,aa}{bb})
-                        rpleTs{2}{2,aa}{bb}(isnan(rpleTs{2}{2,aa}{bb})) = [];
-                    end
+                    rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
                 end
             end
             % combines phase RT RPLEs and phase 1 RPs and RPLEs into the
@@ -449,6 +401,7 @@ if modes(3) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(P1Cout3{aa},...
             threshold,mrk,opt.untilTime,opt.Cival);
+        rpleTs{3}{1,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple','movement onset'});
@@ -459,13 +412,6 @@ if modes(3) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{3}(1,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{3}{1,aa} = repmat({struct('rpleTs',{})},size...
-                (CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{3}{1,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
         else % if no RPLEs, just epoch RPs
             rplemrk = mrk_selectClasses(rplemrk,{'movement onset'});
             Eps{3}(1,aa) = 0;
@@ -475,28 +421,24 @@ if modes(3) == 1
         epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
         epo = proc_meanAcrossTime(epo);
         epo.className = {'rple p1','movement onset'};
+        markers = epo.y;
         [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
         rpleepos{3}{1,aa} = epo;
-        % removes RPLEs rejected as artefacts from rpleTs
-        if ~isempty(iArte)
-            zz = 1;
-            for bb = 1:size(rpleTs{3}{1,aa},1)
-                if isempty(rpleTs{3}{1,aa}{bb})
-                    zz = zz+1;
-                else
-                    for cc = 1:length(rpleTs{3}{1,aa}{bb})
-                        if ismember(zz,iArte)
-                            rpleTs{3}{1,aa}{bb}(zz) = nan;
-                            zz = zz+1;
-                        end
+         % removes RPLE markers (from rpleTs) for events that are rejected
+        iArte(markers(2,iArte)==1) = [];
+        for bb = 1:length(iArte)
+            iArte(bb) = iArte(bb) - sum(markers(2,1:iArte(bb)));
+        end
+        zz = 1;
+        for bb = 1:length(rpleTs{1}{aa})
+            if ~isempty(rpleTs{1}{aa}{bb})
+                for cc = 1:length(rpleTs{1}{aa}{bb})
+                    if ismember(zz,iArte)
+                        rpleTs{1}{aa}{bb}(cc) = nan;
                     end
+                    zz = zz+1;
                 end
-                
-            end
-            for bb = 1:size(rpleTs{3}{1,aa},1)
-                if ~isempty(rpleTs{3}{1,aa}{bb})
-                    rpleTs{3}{1,aa}{bb}(isnan(rpleTs{3}{1,aa}{bb})) = [];
-                end
+                rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
             end
         end
         
@@ -519,6 +461,7 @@ if modes(3) == 1
         % Gets info about RPLEs and the times of threshold crossings
         [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(RTCout3{aa},...
             threshold,mrk,0,opt.Cival);
+        rpleTs{3}{2,aa} = CoutChangeTs;
         % Isolates RPs & RPLEs and gets number of RPLEs per second
         if NoRPLEs == 0 % if RPLEs present
             rplemrk = mrk_selectClasses(rplemrk,{'rple'});
@@ -528,38 +471,23 @@ if modes(3) == 1
             [~,iArte] = proc_rejectArtifactsMaxMin(epo,200);
             Eps{3}(2,aa) = (sum(lastadd)-length(iArte))/WT; % number of 
                 % events per second
-            % Repackages CoutChangeTs into cells and removes excessive NaNs
-            rpleTs{3}{2,aa} = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
-            for bb = 1:size(CoutChangeTs,1)
-                rpleTs{3}{2,aa}{bb} = CoutChangeTs...
-                    (bb,1:find(isnan(CoutChangeTs(bb,:)),1)-1);
-            end
             % Epochs data and performs artefact rejection
             epo = proc_segmentation(cnt,rplemrk,[-400,0]);
             epo = proc_baseline(epo,opt.baseln_len,opt.baseln_pos);
             epo = proc_meanAcrossTime(epo);
             epo.className = {'rple rt'};
             [epo,iArte] = proc_rejectArtifactsMaxMin(epo,200);
-            % removes RPLEs rejected as artefacts from rpleTs
-            if ~isempty(iArte)
-                zz = 1;
-                for bb = 1:size(rpleTs{3}{2,aa},1)
-                    if isempty(rpleTs{3}{2,aa}{bb})
-                        zz = zz+1;
-                    else
-                        for cc = 1:length(rpleTs{3}{2,aa}{bb})
-                            if ismember(zz,iArte)
-                                rpleTs{3}{2,aa}{bb}(zz) = nan;
-                                zz = zz+1;
-                            end
+            % removes RPLE markers (from rpleTs) for events that are rejected
+            zz = 1;
+            for bb = 1:length(rpleTs{1}{aa})
+                if ~isempty(rpleTs{1}{aa}{bb})
+                    for cc = 1:length(rpleTs{1}{aa}{bb})
+                        if ismember(zz,iArte)
+                            rpleTs{1}{aa}{bb}(cc) = nan;
                         end
+                        zz = zz+1;
                     end
-                    
-                end
-                for bb = 1:size(rpleTs{3}{2,aa},1)
-                    if ~isempty(rpleTs{3}{2,aa}{bb})
-                        rpleTs{3}{2,aa}{bb}(isnan(rpleTs{3}{2,aa}{bb})) = [];
-                    end
+                    rpleTs{1}{aa}{bb}(isnan(rpleTs{1}{aa}{bb})) = [];
                 end
             end
             % combines phase RT RPLEs and phase 1 RPs and RPLEs into the

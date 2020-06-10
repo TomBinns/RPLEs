@@ -1,4 +1,4 @@
-function [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(Cout,...
+function [rplemrk,rpleTs,NoRPLEs,lastadd] = findRPLEs(Cout,...
     threshold,mrk,untilTime,Cival)
 % rple_findRPLEs - finds RPLEs in the EEG data
 % 
@@ -24,8 +24,8 @@ function [rplemrk,CoutChangeTs,NoRPLEs,lastadd] = findRPLEs(Cout,...
 % 
 % Returns:
 %  rplemrk -   trial markers with RPLE markers added
-%  CoutChangeTs - index of where RPLEs occured (which trials and at what
-%                 times)
+%  rpleTs -    index of where RPLEs occured (which trials and at what 
+%              times)
 %  NoRPLEs -   if 0, the data contained RPLEs; if 1, the data contained no 
 %              RPLEs
 %  lastadd -   number of RPLEs in each trial
@@ -262,6 +262,12 @@ else
     end
     rplemrk.time = cat(2,rplemrk.time,timesToAdd);
     rplemrk.time = sort(rplemrk.time);
+end
+
+rpleTs = repmat({struct('rpleTs',{})},size(CoutChangeTs,1),1);
+for aa = 1:size(CoutChangeTs,1)
+    rpleTs{aa} = CoutChangeTs...
+        (aa,1:find(isnan(CoutChangeTs(aa,:)),1)-1);
 end
 
 end
